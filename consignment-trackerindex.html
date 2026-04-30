@@ -1,0 +1,1341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Consignment Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f0e8;
+    --surface: #fffcf7;
+    --surface2: #f0ebe0;
+    --ink: #1a1612;
+    --ink2: #6b5f52;
+    --accent: #c8440a;
+    --accent2: #e8a87c;
+    --green: #2d6a4f;
+    --green-light: #d8f3dc;
+    --border: #ddd5c5;
+    --shadow: 0 2px 12px rgba(26,22,18,0.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--ink);
+    color: var(--bg);
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.6rem;
+    letter-spacing: -0.02em;
+  }
+
+  header span {
+    font-size: 0.75rem;
+    font-family: 'DM Mono', monospace;
+    opacity: 0.5;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  nav {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 0;
+    padding: 0 32px;
+    overflow-x: auto;
+  }
+
+  nav button {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 14px 20px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--ink2);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+
+  nav button.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  nav button:hover:not(.active) { color: var(--ink); }
+
+  .container { padding: 28px 32px; max-width: 1200px; }
+
+  /* Stats bar */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+  }
+
+  .stat-card .label {
+    font-size: 0.7rem;
+    font-family: 'DM Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink2);
+    margin-bottom: 6px;
+  }
+
+  .stat-card .value {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.8rem;
+    color: var(--ink);
+  }
+
+  .stat-card .value.accent { color: var(--accent); }
+  .stat-card .value.green { color: var(--green); }
+
+  /* Table section */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .section-header h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.2rem;
+  }
+
+  .btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+
+  .btn:hover { opacity: 0.88; }
+  .btn.secondary {
+    background: var(--surface2);
+    color: var(--ink);
+    border: 1px solid var(--border);
+  }
+
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  table { width: 100%; border-collapse: collapse; }
+
+  thead { background: var(--surface2); }
+
+  th {
+    text-align: left;
+    padding: 11px 16px;
+    font-size: 0.7rem;
+    font-family: 'DM Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink2);
+    font-weight: 500;
+    border-bottom: 1px solid var(--border);
+  }
+
+  td {
+    padding: 12px 16px;
+    font-size: 0.875rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #faf6ef; }
+
+  .badge {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 500;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .badge.active { background: var(--green-light); color: var(--green); }
+  .badge.listed { background: #e8f4fd; color: #1565c0; }
+  .badge.sold { background: #f3e5f5; color: #6a1b9a; }
+  .badge.pending { background: #fff3e0; color: #e65100; }
+  .badge.paid { background: var(--green-light); color: var(--green); }
+  .badge.inactive { background: var(--surface2); color: var(--ink2); }
+
+  .action-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 4px 10px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--ink2);
+    margin-right: 4px;
+    transition: all 0.12s;
+  }
+
+  .action-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .action-btn.danger:hover { border-color: #c62828; color: #c62828; }
+
+  /* Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(26,22,18,0.5);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 28px;
+    width: 480px;
+    max-width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  }
+
+  .modal h3 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.3rem;
+    margin-bottom: 20px;
+  }
+
+  .form-group { margin-bottom: 16px; }
+
+  label {
+    display: block;
+    font-size: 0.78rem;
+    font-family: 'DM Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink2);
+    margin-bottom: 6px;
+  }
+
+  input, select, textarea {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.875rem;
+    background: var(--bg);
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 22px; }
+
+  /* Payout summary */
+  .payout-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .payout-card .name {
+    font-weight: 600;
+    margin-bottom: 3px;
+  }
+
+  .payout-card .meta {
+    font-size: 0.8rem;
+    color: var(--ink2);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .payout-card .amount {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.5rem;
+    color: var(--green);
+    text-align: right;
+  }
+
+  .payout-card .amount small {
+    display: block;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.75rem;
+    color: var(--ink2);
+  }
+
+  .empty {
+    text-align: center;
+    padding: 40px;
+    color: var(--ink2);
+    font-size: 0.9rem;
+  }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  @media (max-width: 600px) {
+    .container { padding: 16px; }
+    .stats { grid-template-columns: 1fr 1fr; }
+    header { padding: 16px; }
+    nav { padding: 0 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="loading-bar" style="display:none;position:fixed;top:0;left:0;right:0;height:3px;background:var(--accent);z-index:999;animation:pulse 1s infinite alternate"></div>
+<style>@keyframes pulse{from{opacity:0.4}to{opacity:1}}</style>
+<header>
+  <h1>Consignment Tracker</h1>
+  <div style="display:flex;align-items:center;gap:16px">
+    <span>Vinted Business Manager</span>
+    <button class="btn" onclick="showExportMenu()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);font-size:0.8rem;padding:7px 14px">⬇ Export CSV</button>
+  </div>
+</header>
+
+<nav>
+  <button class="active" onclick="showTab('dashboard')">📊 Dashboard</button>
+  <button onclick="showTab('consignors')">👥 Consignors</button>
+  <button onclick="showTab('inventory')">📦 Inventory</button>
+  <button onclick="showTab('sales')">💰 Sales</button>
+  <button onclick="showTab('payouts')">🏦 Payouts</button>
+  <button onclick="showTab('expenses')">🧾 Expenses</button>
+  <button onclick="showTab('reports')">📈 Reports</button>
+</nav>
+
+<div class="container">
+
+  <!-- DASHBOARD -->
+  <div id="tab-dashboard" class="tab-content active">
+    <div class="stats">
+      <div class="stat-card">
+        <div class="label">Consignors</div>
+        <div class="value" id="stat-consignors">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Items Listed</div>
+        <div class="value accent" id="stat-listed">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Total Sales</div>
+        <div class="value green" id="stat-sales">£0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Payouts Due</div>
+        <div class="value" id="stat-due">£0</div>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <h2>Recent Sales</h2>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Item</th><th>Consignor</th><th>Sale Price</th><th>Their Cut</th><th>Date</th>
+        </tr></thead>
+        <tbody id="recent-sales-body">
+          <tr><td colspan="5" class="empty">No sales yet. Log your first sale in the Sales tab.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- CONSIGNORS -->
+  <div id="tab-consignors" class="tab-content">
+    <div class="section-header">
+      <h2>Consignors</h2>
+      <button class="btn" onclick="openModal('consignor')">+ Add Consignor</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>#</th><th>Name</th><th>Email / Contact</th><th>Split %</th><th>Items</th><th>Total Sales</th><th>Total Paid</th><th>Owed</th><th>Actions</th>
+        </tr></thead>
+        <tbody id="consignors-body">
+          <tr><td colspan="7" class="empty">No consignors yet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- INVENTORY -->
+  <div id="tab-inventory" class="tab-content">
+    <div class="section-header">
+      <h2>Inventory</h2>
+      <button class="btn" onclick="openModal('item')">+ Add Item</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Item Name</th><th>Consignor</th><th>Category</th><th>List Price</th><th>Status</th><th>Vinted URL</th><th>Actions</th>
+        </tr></thead>
+        <tbody id="inventory-body">
+          <tr><td colspan="7" class="empty">No items yet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SALES -->
+  <div id="tab-sales" class="tab-content">
+    <div class="section-header">
+      <h2>Sales</h2>
+      <button class="btn" onclick="openModal('sale')">+ Log Sale</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Item</th><th>Consignor</th><th>Sale Price</th><th>Platform Fee</th><th>Consignor Cut</th><th>Your Take</th><th>Date</th><th>Actions</th>
+        </tr></thead>
+        <tbody id="sales-body">
+          <tr><td colspan="8" class="empty">No sales logged yet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PAYOUTS -->
+  <div id="tab-payouts" class="tab-content">
+    <div class="section-header">
+      <h2>Payouts Due</h2>
+      <span style="font-size:0.85rem;color:var(--ink2)">Mark consignors as paid when you transfer funds</span>
+    </div>
+    <div id="payouts-list">
+      <div class="empty">No payouts due yet.</div>
+    </div>
+  </div>
+
+  <!-- EXPENSES -->
+  <div id="tab-expenses" class="tab-content">
+    <div class="section-header">
+      <h2>Expenses</h2>
+      <button class="btn" onclick="openModal('expense')">+ Add Expense</button>
+    </div>
+    <div class="stats" style="margin-bottom:20px">
+      <div class="stat-card">
+        <div class="label">Total Expenses</div>
+        <div class="value accent" id="stat-exp-total">£0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">This Month</div>
+        <div class="value" id="stat-exp-month">£0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Packaging</div>
+        <div class="value" id="stat-exp-packaging">£0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Other</div>
+        <div class="value" id="stat-exp-other">£0</div>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Date</th><th>Description</th><th>Category</th><th>Amount</th><th>Receipt Ref</th><th>Actions</th>
+        </tr></thead>
+        <tbody id="expenses-body">
+          <tr><td colspan="6" class="empty">No expenses yet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- REPORTS -->
+  <div id="tab-reports" class="tab-content">
+    <div class="section-header">
+      <h2>Profit & Loss Report</h2>
+      <div style="display:flex;gap:10px;align-items:center">
+        <select id="report-year" onchange="renderReports()" style="width:auto;padding:7px 12px">
+        </select>
+        <button class="btn secondary" onclick="exportReportCSV()">⬇ Export P&L</button>
+        <button class="btn" onclick="window.print()">🖨 Print / PDF</button>
+      </div>
+    </div>
+
+    <!-- Annual summary cards -->
+    <div class="stats" style="margin-bottom:24px">
+      <div class="stat-card">
+        <div class="label">Gross Revenue</div>
+        <div class="value green" id="rep-revenue">£0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Platform Fees</div>
+        <div class="value accent" id="rep-fees">£0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Consignor Payouts</div>
+        <div class="value accent" id="rep-payouts">£0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Net Profit</div>
+        <div class="value" id="rep-profit">£0</div>
+      </div>
+    </div>
+
+    <!-- Monthly breakdown table -->
+    <div class="table-wrap">
+      <table id="report-table">
+        <thead><tr>
+          <th>Month</th>
+          <th>Gross Sales</th>
+          <th>Platform Fees</th>
+          <th>Consignor Payouts</th>
+          <th>Expenses</th>
+          <th>Net Profit</th>
+        </tr></thead>
+        <tbody id="report-body">
+          <tr><td colspan="6" class="empty">No data yet. Log some sales to see your report.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:16px;font-size:0.78rem;color:var(--ink2);font-family:'DM Mono',monospace">* This report is for reference only. Please consult your accountant for official tax filings.</p>
+  </div>
+
+
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal-content"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  // --- SUPABASE SETUP ---
+  const SUPABASE_URL = 'https://rnipzkkjqjoeynpnqhsw.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuaXB6a2tqcWpvZXlucG5xaHN3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0MDU0MjksImV4cCI6MjA5Mjk4MTQyOX0.4qOvT6eM2DDhcmuXPVM5iIdvWCznlNq9oP3dPk093ZY';
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // --- DATA STORE ---
+  let consignors = [];
+  let items = [];
+  let sales = [];
+  let expenses = [];
+
+  // Show loading state
+  function setLoading(on) {
+    const el = document.getElementById('loading-bar');
+    if (el) el.style.display = on ? 'block' : 'none';
+  }
+
+  // Load all data from Supabase
+  async function loadAll() {
+    setLoading(true);
+    try {
+      const [c, i, s, e] = await Promise.all([
+        db.from('consignors').select('*').order('number'),
+        db.from('items').select('*').order('created_at').limit(5000),
+        db.from('sales').select('*').order('date', {ascending: false}).limit(5000),
+        db.from('expenses').select('*').order('date', {ascending: false}).limit(5000),
+      ]);
+
+      consignors = (c.data || []).map(mapConsignor);
+      items = (i.data || []).map(mapItem);
+      sales = (s.data || []).map(mapSale);
+      expenses = e.data || [];
+
+    } catch(err) {
+      console.error('Load error', err);
+    }
+    setLoading(false);
+    render();
+  }
+
+  // Map snake_case DB fields to camelCase used in app
+  function mapConsignor(r) { return { id: r.id, number: r.number, name: r.name, contact: r.contact||'', split: r.split, status: r.status, notes: r.notes||'' }; }
+  function mapItem(r) { return { id: r.id, name: r.name, consignorId: r.consignor_id, category: r.category||'', price: r.price, status: r.status, url: r.url||'' }; }
+  function mapSale(r) { return { id: r.id, itemId: r.item_id, itemName: r.item_name, consignorId: r.consignor_id, salePrice: r.sale_price, platformFee: r.platform_fee, consignorCut: r.consignor_cut, yourTake: r.your_take, date: r.date ? r.date.slice(0,10) : '', payoutStatus: r.payout_status }; }
+
+  // save() is now a no-op — we save directly to Supabase in each CRUD function
+  function save() {}
+
+  function id() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+
+  // --- TABS ---
+  function showTab(name) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('nav button').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    event.target.classList.add('active');
+    render();
+  }
+
+  // --- RENDER ---
+  function render() {
+    renderStats();
+    renderConsignors();
+    renderInventory();
+    renderSales();
+    renderPayouts();
+    renderRecentSales();
+    renderExpenses();
+    renderReports();
+  }
+
+  function fmt(n) { return '£' + Number(n).toFixed(2); }
+
+  function renderStats() {
+    document.getElementById('stat-consignors').textContent = consignors.filter(c => c.status === 'active').length;
+    document.getElementById('stat-listed').textContent = items.filter(i => i.status === 'listed').length;
+    const totalSales = sales.reduce((s, x) => s + Number(x.salePrice), 0);
+    document.getElementById('stat-sales').textContent = fmt(totalSales);
+    // Payouts due = sum of consignor cuts not yet paid
+    const due = sales.filter(s => s.payoutStatus !== 'paid').reduce((s, x) => s + Number(x.consignorCut), 0);
+    document.getElementById('stat-due').textContent = fmt(due);
+  }
+
+  function renderConsignors() {
+    const tbody = document.getElementById('consignors-body');
+    if (!consignors.length) { tbody.innerHTML = '<tr><td colspan="9" class="empty">No consignors yet.</td></tr>'; return; }
+    const sorted = [...consignors].sort((a, b) => (a.number || 0) - (b.number || 0));
+    tbody.innerHTML = sorted.map(c => {
+      const cSales = sales.filter(s => s.consignorId === c.id);
+      const theirItems = items.filter(i => i.consignorId === c.id).length;
+      const totalSales = cSales.reduce((a, s) => a + Number(s.salePrice), 0);
+      const totalPaid = cSales.filter(s => s.payoutStatus === 'paid').reduce((a, s) => a + Number(s.consignorCut), 0);
+      const owed = cSales.filter(s => s.payoutStatus !== 'paid').reduce((a, s) => a + Number(s.consignorCut), 0);
+      return `<tr style="cursor:pointer" onclick="toggleConsignorDetail('${c.id}')">
+        <td style="font-family:'DM Mono',monospace;font-size:0.8rem;color:var(--ink2)">#${String(c.number || '').padStart(3,'0')}</td>
+        <td><strong>${c.name}</strong></td>
+        <td style="font-family:'DM Mono',monospace;font-size:0.8rem">${c.contact || '—'}</td>
+        <td>${c.split}%</td>
+        <td>${theirItems}</td>
+        <td style="font-weight:500">${fmt(totalSales)}</td>
+        <td style="color:var(--ink2)">${fmt(totalPaid)}</td>
+        <td style="color:var(--green);font-weight:500">${fmt(owed)}</td>
+        <td>
+          <button class="action-btn" onclick="event.stopPropagation();editConsignor('${c.id}')">Edit</button>
+          <button class="action-btn danger" onclick="event.stopPropagation();deleteConsignor('${c.id}')">Delete</button>
+        </td>
+      </tr>
+      <tr id="detail-${c.id}" style="display:none;background:var(--bg)">
+        <td colspan="9" style="padding:16px 20px">
+          <div style="font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--ink2);margin-bottom:10px">SALES BREAKDOWN — ${c.name}</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px">
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px">
+              <div style="font-size:0.7rem;font-family:'DM Mono',monospace;color:var(--ink2);margin-bottom:4px">TOTAL ITEMS</div>
+              <div style="font-family:'DM Serif Display',serif;font-size:1.4rem">${theirItems}</div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px">
+              <div style="font-size:0.7rem;font-family:'DM Mono',monospace;color:var(--ink2);margin-bottom:4px">TOTAL SALES</div>
+              <div style="font-family:'DM Serif Display',serif;font-size:1.4rem">${fmt(totalSales)}</div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px">
+              <div style="font-size:0.7rem;font-family:'DM Mono',monospace;color:var(--ink2);margin-bottom:4px">TOTAL PAID OUT</div>
+              <div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:var(--ink2)">${fmt(totalPaid)}</div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px">
+              <div style="font-size:0.7rem;font-family:'DM Mono',monospace;color:var(--ink2);margin-bottom:4px">CURRENTLY OWED</div>
+              <div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:var(--green)">${fmt(owed)}</div>
+            </div>
+          </div>
+          <!-- Tabs -->
+          <div style="display:flex;gap:0;margin-bottom:12px;border-bottom:1px solid var(--border)">
+            <button onclick="showConsignorTab('${c.id}','sales')" id="ctab-sales-${c.id}" style="background:none;border:none;border-bottom:2px solid var(--accent);padding:8px 16px;font-family:'DM Sans',sans-serif;font-size:0.82rem;font-weight:500;cursor:pointer;color:var(--accent)">Sales History</button>
+            <button onclick="showConsignorTab('${c.id}','items')" id="ctab-items-${c.id}" style="background:none;border:none;border-bottom:2px solid transparent;padding:8px 16px;font-family:'DM Sans',sans-serif;font-size:0.82rem;font-weight:500;cursor:pointer;color:var(--ink2)">Items (${items.filter(i=>i.consignorId===c.id).length})</button>
+          </div>
+
+          <!-- Sales panel -->
+          <div id="cpanel-sales-${c.id}">
+          <table style="width:100%;font-size:0.8rem">
+            <thead><tr style="background:var(--surface2)">
+              <th style="padding:6px 10px;text-align:left;font-family:'DM Mono',monospace;font-size:0.68rem">DATE</th>
+              <th style="padding:6px 10px;text-align:left;font-family:'DM Mono',monospace;font-size:0.68rem">ITEM</th>
+              <th style="padding:6px 10px;text-align:left;font-family:'DM Mono',monospace;font-size:0.68rem">SALE PRICE</th>
+              <th style="padding:6px 10px;text-align:left;font-family:'DM Mono',monospace;font-size:0.68rem">THEIR CUT</th>
+              <th style="padding:6px 10px;text-align:left;font-family:'DM Mono',monospace;font-size:0.68rem">PAYOUT</th>
+            </tr></thead>
+            <tbody>
+              ${cSales.slice(0,15).map(s => `<tr>
+                <td style="padding:5px 10px;font-family:'DM Mono',monospace">${s.date}</td>
+                <td style="padding:5px 10px">${s.itemName||'—'}</td>
+                <td style="padding:5px 10px">${fmt(s.salePrice)}</td>
+                <td style="padding:5px 10px;color:var(--green)">${fmt(s.consignorCut)}</td>
+                <td style="padding:5px 10px"><span class="badge ${s.payoutStatus}">${s.payoutStatus}</span></td>
+              </tr>`).join('')}
+              ${cSales.length > 15 ? `<tr><td colspan="5" style="padding:8px 10px;color:var(--ink2);font-size:0.78rem">...and ${cSales.length - 15} more sales</td></tr>` : ''}
+            </tbody>
+          </table>
+          </div>
+
+          <!-- Items panel -->
+          <div id="cpanel-items-${c.id}" style="display:none">
+          <table style="width:100%;font-size:0.8rem">
+            <thead><tr style="background:var(--surface2)">
+              <th style="padding:6px 10px;text-align:left;font-family:'DM Mono',monospace;font-size:0.68rem">ITEM</th>
+              <th style="padding:6px 10px;text-align:left;font-family:'DM Mono',monospace;font-size:0.68rem">CATEGORY</th>
+              <th style="padding:6px 10px;text-align:left;font-family:'DM Mono',monospace;font-size:0.68rem">PRICE</th>
+              <th style="padding:6px 10px;text-align:left;font-family:'DM Mono',monospace;font-size:0.68rem">STATUS</th>
+              <th style="padding:6px 10px;text-align:left;font-family:'DM Mono',monospace;font-size:0.68rem">LISTING</th>
+            </tr></thead>
+            <tbody>
+              ${items.filter(i=>i.consignorId===c.id).map(item => `<tr>
+                <td style="padding:5px 10px"><strong>${item.name}</strong></td>
+                <td style="padding:5px 10px;color:var(--ink2)">${item.category||'—'}</td>
+                <td style="padding:5px 10px">${fmt(item.price)}</td>
+                <td style="padding:5px 10px"><span class="badge ${item.status}">${item.status}</span></td>
+                <td style="padding:5px 10px">${item.url ? `<a href="${item.url}" target="_blank" style="color:var(--accent);font-size:0.78rem">View ↗</a>` : '—'}</td>
+              </tr>`).join('')}
+              ${items.filter(i=>i.consignorId===c.id).length === 0 ? '<tr><td colspan="5" style="padding:12px 10px;color:var(--ink2);text-align:center">No items found for this consignor</td></tr>' : ''}
+            </tbody>
+          </table>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  function toggleConsignorDetail(cid) {
+    const el = document.getElementById('detail-' + cid);
+    if (el) el.style.display = el.style.display === 'none' ? 'table-row' : 'none';
+  }
+
+  function showConsignorTab(cid, tab) {
+    ['sales','items'].forEach(t => {
+      const panel = document.getElementById('cpanel-' + t + '-' + cid);
+      const btn = document.getElementById('ctab-' + t + '-' + cid);
+      if (panel) panel.style.display = t === tab ? 'block' : 'none';
+      if (btn) {
+        btn.style.borderBottomColor = t === tab ? 'var(--accent)' : 'transparent';
+        btn.style.color = t === tab ? 'var(--accent)' : 'var(--ink2)';
+      }
+    });
+  }
+
+  function renderInventory() {
+    const tbody = document.getElementById('inventory-body');
+    if (!items.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty">No items yet.</td></tr>'; return; }
+    tbody.innerHTML = items.map(item => {
+      const c = consignors.find(x => x.id === item.consignorId);
+      return `<tr>
+        <td><strong>${item.name}</strong></td>
+        <td>${c ? c.name : '—'}</td>
+        <td style="font-size:0.8rem;color:var(--ink2)">${item.category || '—'}</td>
+        <td>${fmt(item.price)}</td>
+        <td><span class="badge ${item.status}">${item.status}</span></td>
+        <td style="font-size:0.8rem">${item.url ? `<a href="${item.url}" target="_blank" style="color:var(--accent)">View ↗</a>` : '—'}</td>
+        <td>
+          <button class="action-btn" onclick="editItem('${item.id}')">Edit</button>
+          <button class="action-btn danger" onclick="deleteItem('${item.id}')">Delete</button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  function renderSales() {
+    const tbody = document.getElementById('sales-body');
+    if (!sales.length) { tbody.innerHTML = '<tr><td colspan="8" class="empty">No sales logged yet.</td></tr>'; return; }
+    tbody.innerHTML = sales.map(s => {
+      const item = items.find(x => x.id === s.itemId);
+      const c = consignors.find(x => x.id === s.consignorId);
+      return `<tr>
+        <td><strong>${item ? item.name : s.itemName}</strong></td>
+        <td>${c ? c.name : '—'}</td>
+        <td>${fmt(s.salePrice)}</td>
+        <td style="color:var(--ink2)">${fmt(s.platformFee)}</td>
+        <td style="color:var(--green)">${fmt(s.consignorCut)}</td>
+        <td style="font-weight:500">${fmt(s.yourTake)}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:0.8rem">${s.date}</td>
+        <td>
+          ${s.payoutStatus !== 'paid' ? `<button class="action-btn" onclick="markPaid('${s.id}')">Mark Paid</button>` : '<span class="badge paid">paid</span>'}
+          <button class="action-btn danger" onclick="deleteSale('${s.id}')">✕</button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  function renderPayouts() {
+    const list = document.getElementById('payouts-list');
+    const unpaid = sales.filter(s => s.payoutStatus !== 'paid');
+    if (!unpaid.length) { list.innerHTML = '<div class="empty">🎉 All consignors are paid up!</div>'; return; }
+
+    // Group by consignor
+    const byConsignor = {};
+    unpaid.forEach(s => {
+      if (!byConsignor[s.consignorId]) byConsignor[s.consignorId] = { total: 0, items: 0, sales: [] };
+      byConsignor[s.consignorId].total += Number(s.consignorCut);
+      byConsignor[s.consignorId].items++;
+      byConsignor[s.consignorId].sales.push(s);
+    });
+
+    list.innerHTML = Object.entries(byConsignor).map(([cid, data]) => {
+      const c = consignors.find(x => x.id === cid);
+      return `<div class="payout-card">
+        <div>
+          <div class="name">${c ? c.name : 'Unknown'}</div>
+          <div class="meta">${data.items} sale${data.items > 1 ? 's' : ''} unpaid${c ? ' · ' + c.contact : ''}</div>
+        </div>
+        <div style="text-align:right">
+          <div class="amount">${fmt(data.total)}<small>consignor share</small></div>
+          <button class="btn" style="margin-top:8px;font-size:0.78rem;padding:6px 14px" onclick="markAllPaid('${cid}')">Mark All Paid</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderRecentSales() {
+    const tbody = document.getElementById('recent-sales-body');
+    const recent = [...sales].sort((a,b) => b.date.localeCompare(a.date)).slice(0, 5);
+    if (!recent.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty">No sales yet.</td></tr>'; return; }
+    tbody.innerHTML = recent.map(s => {
+      const item = items.find(x => x.id === s.itemId);
+      const c = consignors.find(x => x.id === s.consignorId);
+      return `<tr>
+        <td>${item ? item.name : s.itemName}</td>
+        <td>${c ? c.name : '—'}</td>
+        <td>${fmt(s.salePrice)}</td>
+        <td style="color:var(--green)">${fmt(s.consignorCut)}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:0.8rem">${s.date}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // --- MODALS ---
+  function openModal(type, data) {
+    const modal = document.getElementById('modal-content');
+    document.getElementById('modal-overlay').classList.add('open');
+
+    if (type === 'consignor') {
+      const nextNum = data?.number || (consignors.length > 0 ? Math.max(...consignors.map(c => c.number || 0)) + 1 : 1);
+      modal.innerHTML = `
+        <h3>${data ? 'Edit' : 'Add'} Consignor</h3>
+        <div class="form-row">
+          <div class="form-group"><label>Consignor #</label><input id="f-number" type="number" value="${nextNum}" min="1"></div>
+          <div class="form-group"><label>Status</label>
+            <select id="f-status">
+              <option value="active" ${data?.status==='active'?'selected':''}>Active</option>
+              <option value="inactive" ${data?.status==='inactive'?'selected':''}>Inactive</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group"><label>Full Name</label><input id="f-name" value="${data?.name||''}" placeholder="e.g. Sarah Johnson"></div>
+        <div class="form-group"><label>Email / Contact</label><input id="f-contact" value="${data?.contact||''}" placeholder="sarah@email.com"></div>
+        <div class="form-group"><label>Their Split %</label><input id="f-split" type="number" value="${data?.split||70}" min="0" max="100"></div>
+        <div class="form-group"><label>Notes</label><textarea id="f-notes" rows="2" placeholder="Any notes...">${data?.notes||''}</textarea></div>
+        <div class="modal-actions">
+          <button class="btn secondary" onclick="closeModal()">Cancel</button>
+          <button class="btn" onclick="saveConsignor('${data?.id||''}')">Save</button>
+        </div>`;
+    }
+
+    if (type === 'item') {
+      const opts = consignors.map(c => `<option value="${c.id}" ${data?.consignorId===c.id?'selected':''}>${c.name}</option>`).join('');
+      modal.innerHTML = `
+        <h3>${data ? 'Edit' : 'Add'} Item</h3>
+        <div class="form-group"><label>Item Name</label><input id="f-name" value="${data?.name||''}" placeholder="e.g. Vintage Levi's Jacket"></div>
+        <div class="form-row">
+          <div class="form-group"><label>Consignor</label><select id="f-consignor"><option value="">— Select —</option>${opts}</select></div>
+          <div class="form-group"><label>Category</label><input id="f-category" value="${data?.category||''}" placeholder="e.g. Jackets"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>List Price (£)</label><input id="f-price" type="number" step="0.01" value="${data?.price||''}" placeholder="0.00"></div>
+          <div class="form-group"><label>Status</label>
+            <select id="f-status">
+              <option value="listed" ${data?.status==='listed'?'selected':''}>Listed</option>
+              <option value="sold" ${data?.status==='sold'?'selected':''}>Sold</option>
+              <option value="pending" ${data?.status==='pending'?'selected':''}>Pending</option>
+              <option value="inactive" ${data?.status==='inactive'?'selected':''}>Unlisted</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group"><label>Vinted Listing URL</label><input id="f-url" value="${data?.url||''}" placeholder="https://www.vinted.co.uk/..."></div>
+        <div class="modal-actions">
+          <button class="btn secondary" onclick="closeModal()">Cancel</button>
+          <button class="btn" onclick="saveItem('${data?.id||''}')">Save</button>
+        </div>`;
+      if (data?.consignorId) document.getElementById('f-consignor').value = data.consignorId;
+    }
+
+
+    if (type === 'expense') {
+      const cats = ['Packaging & Postage','Platform Fees','Subscriptions','Equipment','Marketing','Travel','Professional Fees','Other'];
+      modal.innerHTML = `
+        <h3>${data ? 'Edit' : 'Add'} Expense</h3>
+        <div class="form-row">
+          <div class="form-group"><label>Date</label><input id="f-date" type="date" value="${data?.date || new Date().toISOString().slice(0,10)}"></div>
+          <div class="form-group"><label>Amount (£)</label><input id="f-amount" type="number" step="0.01" value="${data?.amount||''}" placeholder="0.00"></div>
+        </div>
+        <div class="form-group"><label>Description</label><input id="f-name" value="${data?.name||''}" placeholder="e.g. Bubble wrap x100"></div>
+        <div class="form-row">
+          <div class="form-group"><label>Category</label>
+            <select id="f-category">
+              ${cats.map(c => `<option value="${c}" ${data?.category===c?'selected':''}>${c}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group"><label>Receipt Ref</label><input id="f-ref" value="${data?.ref||''}" placeholder="e.g. INV-001"></div>
+        </div>
+        <div class="form-group"><label>Notes</label><textarea id="f-notes" rows="2" placeholder="Optional notes...">${data?.notes||''}</textarea></div>
+        <div class="modal-actions">
+          <button class="btn secondary" onclick="closeModal()">Cancel</button>
+          <button class="btn" onclick="saveExpense('${data?.id||''}')">Save</button>
+        </div>`;
+    }
+
+    if (type === 'sale') {
+      const listedItems = items.filter(i => i.status === 'listed' || i.status === 'sold');
+      const opts = listedItems.map(i => {
+        const c = consignors.find(x => x.id === i.consignorId);
+        return `<option value="${i.id}">${i.name}${c?' ('+c.name+')':''}</option>`;
+      }).join('');
+      modal.innerHTML = `
+        <h3>Log a Sale</h3>
+        <div class="form-group"><label>Item Sold</label>
+          <select id="f-item" onchange="updateSaleCalc()"><option value="">— Select Item —</option>${opts}</select>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Sale Price (£)</label><input id="f-price" type="number" step="0.01" placeholder="0.00" oninput="updateSaleCalc()"></div>
+          <div class="form-group"><label>Platform Fee (£)</label><input id="f-fee" type="number" step="0.01" placeholder="0.00" value="0" oninput="updateSaleCalc()"></div>
+        </div>
+        <div class="form-group"><label>Date Sold</label><input id="f-date" type="date" value="${new Date().toISOString().slice(0,10)}"></div>
+        <div id="sale-calc" style="background:var(--bg);border-radius:8px;padding:14px;margin-top:4px;display:none">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:0.85rem">
+            <span style="color:var(--ink2)">Consignor's cut</span>
+            <strong id="calc-cut" style="color:var(--green)">—</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:0.85rem">
+            <span style="color:var(--ink2)">Your take</span>
+            <strong id="calc-you">—</strong>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn secondary" onclick="closeModal()">Cancel</button>
+          <button class="btn" onclick="saveSale()">Log Sale</button>
+        </div>`;
+    }
+  }
+
+  function updateSaleCalc() {
+    const itemId = document.getElementById('f-item')?.value;
+    const price = parseFloat(document.getElementById('f-price')?.value) || 0;
+    const fee = parseFloat(document.getElementById('f-fee')?.value) || 0;
+    const calc = document.getElementById('sale-calc');
+    if (!itemId || !price) { calc.style.display='none'; return; }
+    const item = items.find(x => x.id === itemId);
+    const c = consignors.find(x => x.id === item?.consignorId);
+    if (!c) { calc.style.display='none'; return; }
+    const net = price - fee;
+    const cut = net * (c.split / 100);
+    const you = net - cut;
+    calc.style.display = 'block';
+    document.getElementById('calc-cut').textContent = fmt(cut);
+    document.getElementById('calc-you').textContent = fmt(you);
+  }
+
+  function closeModal(e) {
+    if (e && e.target !== document.getElementById('modal-overlay')) return;
+    document.getElementById('modal-overlay').classList.remove('open');
+  }
+
+  // --- CRUD ---
+  async function saveConsignor(editId) {
+    const obj = {
+      id: editId || id(),
+      number: parseInt(document.getElementById('f-number').value) || 1,
+      name: document.getElementById('f-name').value.trim(),
+      contact: document.getElementById('f-contact').value.trim(),
+      split: parseInt(document.getElementById('f-split').value),
+      status: document.getElementById('f-status').value,
+      notes: document.getElementById('f-notes').value.trim(),
+    };
+    if (!obj.name) return alert('Name is required');
+    setLoading(true);
+    const dbObj = { id: obj.id, number: obj.number, name: obj.name, contact: obj.contact, split: obj.split, status: obj.status, notes: obj.notes };
+    if (editId) {
+      await db.from('consignors').update(dbObj).eq('id', editId);
+    } else {
+      await db.from('consignors').insert(dbObj);
+    }
+    closeModal({});
+    await loadAll();
+  }
+
+  function editConsignor(cid) {
+    const c = consignors.find(x => x.id === cid);
+    openModal('consignor', c);
+    // wait for DOM then set id
+    setTimeout(() => {
+      document.querySelector(`#modal-content button.btn:last-child`).setAttribute('onclick', `saveConsignor('${cid}')`);
+    }, 10);
+  }
+
+  async function deleteConsignor(cid) {
+    if (!confirm('Delete this consignor? Their items will remain.')) return;
+    setLoading(true);
+    await db.from('consignors').delete().eq('id', cid);
+    await loadAll();
+  }
+
+  async function saveItem(editId) {
+    const obj = {
+      id: editId || id(),
+      name: document.getElementById('f-name').value.trim(),
+      consignorId: document.getElementById('f-consignor').value,
+      category: document.getElementById('f-category').value.trim(),
+      price: parseFloat(document.getElementById('f-price').value) || 0,
+      status: document.getElementById('f-status').value,
+      url: document.getElementById('f-url').value.trim(),
+    };
+    if (!obj.name) return alert('Item name is required');
+    setLoading(true);
+    const dbObj = { id: obj.id, name: obj.name, consignor_id: obj.consignorId, category: obj.category, price: obj.price, status: obj.status, url: obj.url };
+    if (editId) {
+      await db.from('items').update(dbObj).eq('id', editId);
+    } else {
+      await db.from('items').insert(dbObj);
+    }
+    closeModal({});
+    await loadAll();
+  }
+
+  function editItem(iid) {
+    const item = items.find(x => x.id === iid);
+    openModal('item', item);
+    setTimeout(() => {
+      document.getElementById('f-consignor').value = item.consignorId || '';
+    }, 10);
+  }
+
+  async function deleteItem(iid) {
+    if (!confirm('Delete this item?')) return;
+    setLoading(true);
+    await db.from('items').delete().eq('id', iid);
+    await loadAll();
+  }
+
+  async function saveSale() {
+    const itemId = document.getElementById('f-item').value;
+    const price = parseFloat(document.getElementById('f-price').value) || 0;
+    const fee = parseFloat(document.getElementById('f-fee').value) || 0;
+    const date = document.getElementById('f-date').value;
+    if (!itemId || !price) return alert('Please select an item and enter the sale price');
+    const item = items.find(x => x.id === itemId);
+    const c = consignors.find(x => x.id === item?.consignorId);
+    const net = price - fee;
+    const cut = c ? net * (c.split / 100) : 0;
+    const you = net - cut;
+    setLoading(true);
+    await db.from('sales').insert({ id: id(), item_id: itemId, item_name: item?.name, consignor_id: item?.consignorId, sale_price: price, platform_fee: fee, consignor_cut: cut, your_take: you, date, payout_status: 'pending' });
+    await db.from('items').update({ status: 'sold' }).eq('id', itemId);
+    closeModal({});
+    await loadAll();
+  }
+
+  async function deleteSale(sid) {
+    if (!confirm('Delete this sale record?')) return;
+    setLoading(true);
+    await db.from('sales').delete().eq('id', sid);
+    await loadAll();
+  }
+
+  async function markPaid(sid) {
+    setLoading(true);
+    await db.from('sales').update({ payout_status: 'paid' }).eq('id', sid);
+    await loadAll();
+  }
+
+  async function markAllPaid(cid) {
+    setLoading(true);
+    const unpaidIds = sales.filter(s => s.consignorId === cid && s.payoutStatus !== 'paid').map(s => s.id);
+    await Promise.all(unpaidIds.map(sid => db.from('sales').update({ payout_status: 'paid' }).eq('id', sid)));
+    await loadAll();
+  }
+
+
+
+  // --- EXPENSES ---
+  function renderExpenses() {
+    const tbody = document.getElementById('expenses-body');
+    if (!tbody) return;
+    const totalExp = expenses.reduce((s,e) => s + Number(e.amount), 0);
+    const now = new Date();
+    const monthExp = expenses.filter(e => e.date && e.date.slice(0,7) === now.toISOString().slice(0,7)).reduce((s,e) => s + Number(e.amount), 0);
+    const packExp = expenses.filter(e => e.category === 'Packaging & Postage').reduce((s,e) => s + Number(e.amount), 0);
+    const otherExp = expenses.filter(e => e.category !== 'Packaging & Postage').reduce((s,e) => s + Number(e.amount), 0);
+    const el = id => document.getElementById(id);
+    if (el('stat-exp-total')) el('stat-exp-total').textContent = fmt(totalExp);
+    if (el('stat-exp-month')) el('stat-exp-month').textContent = fmt(monthExp);
+    if (el('stat-exp-packaging')) el('stat-exp-packaging').textContent = fmt(packExp);
+    if (el('stat-exp-other')) el('stat-exp-other').textContent = fmt(otherExp);
+    if (!expenses.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty">No expenses yet.</td></tr>'; return; }
+    const sorted = [...expenses].sort((a,b) => b.date.localeCompare(a.date));
+    tbody.innerHTML = sorted.map(e => `<tr>
+      <td style="font-family:'DM Mono',monospace;font-size:0.8rem">${e.date}</td>
+      <td><strong>${e.name}</strong>${e.notes ? `<br><span style="font-size:0.78rem;color:var(--ink2)">${e.notes}</span>` : ''}</td>
+      <td><span class="badge listed">${e.category}</span></td>
+      <td style="font-weight:500;color:var(--accent)">${fmt(e.amount)}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:0.8rem">${e.ref||'—'}</td>
+      <td>
+        <button class="action-btn" onclick="editExpense('${e.id}')">Edit</button>
+        <button class="action-btn danger" onclick="deleteExpense('${e.id}')">Delete</button>
+      </td>
+    </tr>`).join('');
+  }
+
+  async function saveExpense(editId) {
+    const obj = {
+      id: editId || id(),
+      date: document.getElementById('f-date').value,
+      name: document.getElementById('f-name').value.trim(),
+      amount: parseFloat(document.getElementById('f-amount').value) || 0,
+      category: document.getElementById('f-category').value,
+      ref: document.getElementById('f-ref').value.trim(),
+      notes: document.getElementById('f-notes').value.trim(),
+    };
+    if (!obj.name) return alert('Description is required');
+    setLoading(true);
+    if (editId) {
+      await db.from('expenses').update(obj).eq('id', editId);
+    } else {
+      await db.from('expenses').insert(obj);
+    }
+    closeModal({});
+    await loadAll();
+  }
+
+  function editExpense(eid) {
+    const e = expenses.find(x => x.id === eid);
+    openModal('expense', e);
+    setTimeout(() => {
+      document.getElementById('f-category').value = e.category;
+    }, 10);
+  }
+
+  async function deleteExpense(eid) {
+    if (!confirm('Delete this expense?')) return;
+    setLoading(true);
+    await db.from('expenses').delete().eq('id', eid);
+    await loadAll();
+  }
+
+  // --- REPORTS ---
+  function renderReports() {
+    const sel = document.getElementById('report-year');
+    if (!sel) return;
+    const years = new Set([...sales.map(s => s.date?.slice(0,4)), ...expenses.map(e => e.date?.slice(0,4))].filter(Boolean));
+    const currentYear = new Date().getFullYear().toString();
+    if (!years.has(currentYear)) years.add(currentYear);
+    const sortedYears = [...years].sort((a,b) => b-a);
+    const prevValue = sel.value;
+    sel.innerHTML = '';
+    sortedYears.forEach(y => { const o = document.createElement('option'); o.value = y; o.textContent = y; sel.appendChild(o); });
+    if (prevValue && sortedYears.includes(prevValue)) sel.value = prevValue;
+    else sel.value = currentYear;
+    const year = sel.value || currentYear;
+
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    let annualRevenue = 0, annualFees = 0, annualPayouts = 0, annualExpenses = 0;
+
+    const rows = months.map((m, mi) => {
+      const key = `${year}-${String(mi+1).padStart(2,'0')}`;
+      const mSales = sales.filter(s => s.date?.slice(0,7) === key);
+      const mExp = expenses.filter(e => e.date?.slice(0,7) === key);
+      const revenue = mSales.reduce((s,x) => s + Number(x.salePrice), 0);
+      const fees = mSales.reduce((s,x) => s + Number(x.platformFee), 0);
+      const payouts = mSales.reduce((s,x) => s + Number(x.consignorCut), 0);
+      const exp = mExp.reduce((s,x) => s + Number(x.amount), 0);
+      const net = revenue - fees - payouts - exp;
+      annualRevenue += revenue; annualFees += fees; annualPayouts += payouts; annualExpenses += exp;
+      const isEmpty = revenue === 0 && exp === 0;
+      return `<tr style="${isEmpty ? 'opacity:0.4' : ''}">
+        <td style="font-weight:500">${m} ${year}</td>
+        <td>${fmt(revenue)}</td>
+        <td style="color:var(--accent)">${fmt(fees)}</td>
+        <td style="color:var(--accent)">${fmt(payouts)}</td>
+        <td style="color:var(--accent)">${fmt(exp)}</td>
+        <td style="font-weight:600;color:${net >= 0 ? 'var(--green)' : '#c62828'}">${fmt(net)}</td>
+      </tr>`;
+    });
+
+    // Totals row
+    const annualNet = annualRevenue - annualFees - annualPayouts - annualExpenses;
+    rows.push(`<tr style="background:var(--surface2);font-weight:600;border-top:2px solid var(--border)">
+      <td>TOTAL ${year}</td>
+      <td>${fmt(annualRevenue)}</td>
+      <td style="color:var(--accent)">${fmt(annualFees)}</td>
+      <td style="color:var(--accent)">${fmt(annualPayouts)}</td>
+      <td style="color:var(--accent)">${fmt(annualExpenses)}</td>
+      <td style="color:${annualNet >= 0 ? 'var(--green)' : '#c62828'}">${fmt(annualNet)}</td>
+    </tr>`);
+
+    document.getElementById('report-body').innerHTML = rows.join('');
+    document.getElementById('rep-revenue').textContent = fmt(annualRevenue);
+    document.getElementById('rep-fees').textContent = fmt(annualFees);
+    document.getElementById('rep-payouts').textContent = fmt(annualPayouts);
+    document.getElementById('rep-profit').textContent = fmt(annualNet);
+    document.getElementById('rep-profit').style.color = annualNet >= 0 ? 'var(--green)' : '#c62828';
+  }
+
+  function exportReportCSV() {
+    const sel = document.getElementById('report-year');
+    const year = sel?.value || new Date().getFullYear().toString();
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const rows = [['Month', 'Gross Sales (£)', 'Platform Fees (£)', 'Consignor Payouts (£)', 'Expenses (£)', 'Net Profit (£)']];
+    let totRev=0, totFees=0, totPay=0, totExp=0;
+    months.forEach((m, mi) => {
+      const key = `${year}-${String(mi+1).padStart(2,'0')}`;
+      const mSales = sales.filter(s => s.date?.slice(0,7) === key);
+      const mExp = expenses.filter(e => e.date?.slice(0,7) === key);
+      const revenue = mSales.reduce((s,x) => s + Number(x.salePrice), 0);
+      const fees = mSales.reduce((s,x) => s + Number(x.platformFee), 0);
+      const payouts = mSales.reduce((s,x) => s + Number(x.consignorCut), 0);
+      const exp = mExp.reduce((s,x) => s + Number(x.amount), 0);
+      const net = revenue - fees - payouts - exp;
+      totRev+=revenue; totFees+=fees; totPay+=payouts; totExp+=exp;
+      rows.push([`${m} ${year}`, revenue.toFixed(2), fees.toFixed(2), payouts.toFixed(2), exp.toFixed(2), net.toFixed(2)]);
+    });
+    const totNet = totRev - totFees - totPay - totExp;
+    rows.push([`TOTAL ${year}`, totRev.toFixed(2), totFees.toFixed(2), totPay.toFixed(2), totExp.toFixed(2), totNet.toFixed(2)]);
+    downloadCSV(`profit-and-loss-${year}.csv`, toCSV(rows));
+  }
+
+  // --- EXPORT ---
+  function showExportMenu() {
+    const modal = document.getElementById('modal-content');
+    document.getElementById('modal-overlay').classList.add('open');
+    modal.innerHTML = `
+      <h3>Export to CSV</h3>
+      <p style="color:var(--ink2);font-size:0.875rem;margin-bottom:20px">Download your data as spreadsheet files you can open in Excel or Google Sheets.</p>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <button class="btn" onclick="exportCSV('consignors')">👥 Export Consignors</button>
+        <button class="btn" onclick="exportCSV('inventory')">📦 Export Inventory</button>
+        <button class="btn" onclick="exportCSV('sales')">💰 Export Sales</button>
+        <button class="btn" onclick="exportCSV('payouts')">🏦 Export Payout Summary</button>
+        <button class="btn" onclick="exportCSV('expenses')">🧾 Export Expenses</button>
+        <button class="btn" style="background:var(--green)" onclick="exportCSV('all')">⬇ Export All (4 files)</button>
+      </div>
+      <div class="modal-actions" style="margin-top:20px">
+        <button class="btn secondary" onclick="closeModal({target:document.getElementById('modal-overlay')})">Close</button>
+      </div>`;
+  }
+
+  function toCSV(rows) {
+    return rows.map(row =>
+      row.map(cell => {
+        const s = String(cell ?? '');
+        return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
+      }).join(',')
+    ).join('\n');
+  }
+
+  function downloadCSV(filename, content) {
+    const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+  }
+
+  function exportCSV(type) {
+    const date = new Date().toISOString().slice(0,10);
+
+    if (type === 'consignors' || type === 'all') {
+      const rows = [['#', 'Name', 'Email/Contact', 'Split %', 'Status', 'Notes', 'Items Listed', 'Total Owed']];
+      [...consignors].sort((a,b)=>(a.number||0)-(b.number||0)).forEach(c => {
+        const theirItems = items.filter(i => i.consignorId === c.id).length;
+        const owed = sales.filter(s => s.consignorId === c.id && s.payoutStatus !== 'paid').reduce((a,s) => a + Number(s.consignorCut), 0);
+        rows.push([`#${String(c.number||'').padStart(3,'0')}`, c.name, c.contact, c.split, c.status, c.notes, theirItems, owed.toFixed(2)]);
+      });
+      downloadCSV(`consignors-${date}.csv`, toCSV(rows));
+    }
+
+    if (type === 'inventory' || type === 'all') {
+      const rows = [['Item Name', 'Consignor #', 'Consignor Name', 'Category', 'List Price (£)', 'Status', 'Vinted URL']];
+      items.forEach(item => {
+        const c = consignors.find(x => x.id === item.consignorId);
+        rows.push([item.name, c ? `#${String(c.number||'').padStart(3,'0')}` : '', c?.name||'', item.category, item.price, item.status, item.url]);
+      });
+      downloadCSV(`inventory-${date}.csv`, toCSV(rows));
+    }
+
+    if (type === 'sales' || type === 'all') {
+      const rows = [['Date', 'Item', 'Consignor #', 'Consignor Name', 'Sale Price (£)', 'Platform Fee (£)', 'Consignor Cut (£)', 'Your Take (£)', 'Payout Status']];
+      [...sales].sort((a,b)=>b.date.localeCompare(a.date)).forEach(s => {
+        const item = items.find(x => x.id === s.itemId);
+        const c = consignors.find(x => x.id === s.consignorId);
+        rows.push([s.date, item?.name||s.itemName, c ? `#${String(c.number||'').padStart(3,'0')}` : '', c?.name||'', Number(s.salePrice).toFixed(2), Number(s.platformFee).toFixed(2), Number(s.consignorCut).toFixed(2), Number(s.yourTake).toFixed(2), s.payoutStatus]);
+      });
+      downloadCSV(`sales-${date}.csv`, toCSV(rows));
+    }
+
+    if (type === 'expenses' || type === 'all') {
+      const rows = [['Date', 'Description', 'Category', 'Amount (£)', 'Receipt Ref', 'Notes']];
+      [...expenses].sort((a,b)=>b.date.localeCompare(a.date)).forEach(e => {
+        rows.push([e.date, e.name, e.category, Number(e.amount).toFixed(2), e.ref, e.notes]);
+      });
+      downloadCSV(`expenses-${date}.csv`, toCSV(rows));
+    }
+
+    if (type === 'payouts' || type === 'all') {
+      const rows = [['Consignor #', 'Consignor Name', 'Contact', 'Unpaid Sales', 'Total Owed (£)']];
+      const unpaid = sales.filter(s => s.payoutStatus !== 'paid');
+      const byC = {};
+      unpaid.forEach(s => {
+        if (!byC[s.consignorId]) byC[s.consignorId] = { count: 0, total: 0 };
+        byC[s.consignorId].count++;
+        byC[s.consignorId].total += Number(s.consignorCut);
+      });
+      Object.entries(byC).forEach(([cid, data]) => {
+        const c = consignors.find(x => x.id === cid);
+        rows.push([c ? `#${String(c.number||'').padStart(3,'0')}` : '', c?.name||'', c?.contact||'', data.count, data.total.toFixed(2)]);
+      });
+      downloadCSV(`payouts-${date}.csv`, toCSV(rows));
+    }
+  }
+
+  // init
+  loadAll();
+</script>
+</body>
+</html>
